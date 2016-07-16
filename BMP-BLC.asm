@@ -11,7 +11,7 @@ NextImage:
         mov si,offset packet
         int 13h ; Read first 63 1/2 KB
 
-	cmp [200],'BM'
+	cmp word [200],'BM'
 	jnz ContinueRendering ; check for BMP signature - if not then exit
 jmp Exit
 	Continue Rendering:
