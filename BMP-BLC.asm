@@ -1,4 +1,3 @@
-
 mov ax,2000h
 mov ss,ax
 
@@ -69,8 +68,8 @@ jmp Exit
                         add si,2
                         cmp bx,cx
                 jnz nextpixel
-        sub cx,320
-        sub ax,320
+        	sub cx,320
+		sub ax,320
         jnc startscanline
         pop ds ;clear stack
         push cs
