@@ -1,15 +1,15 @@
 mov ax,2000h
-mov ss,ax
+mov ss,ax ; set stack so it won't be clobbered by incoming files
 
 push cs
-pop ds
+pop ds ; set DS to Code Sector
 
 NextImage:
 
         mov ah,42h
         mov dl,80h
         mov si,offset packet
-        int 13h
+        int 13h ; Read first 63 1/2 KB
 
 	cmp [200],'BM'
 	jnz ContinueRendering ; check for BMP signature - if not then exit
@@ -28,7 +28,7 @@ jmp Exit
         PaletteLoop:
                 mov al,[bx+2]
                 shr al,2
-                out dx,al           ;get load low Endian RGB(24 bit) as high endian RGB(18 bit)
+                out dx,al           ;get load little Endian RGB(24 bit) as big endian RGB(18 bit)
                 mov al,[bx+1]
                 shr al,2
                 out dx,al
@@ -41,45 +41,40 @@ jmp Exit
         mov ah,0
 
 
-        mov cx,[212h] ; load width to bx
+        mov cx,[212h] ; load width to cx
         add cx,3
         shr cx,2
         shl cx,2        ;adjust for scan lines as mult. of 4
         mov ax,[214h] ; load height into ax
-        dec ax
-        mov dx,320 ;adjust for pixel start
-        imul dx  ;pixel position of first pixel
-        add cx,ax ;set cx as end of loop
-        mov si,51ah ; set SI to address of first pixel
+        dec ax ; adjust for zero start
+        mov dx,320 
+        imul dx  ;set ax as pixel position of first pixel
+        add cx,ax ;set cx as end of loop - last pixel in first iteration
+        mov si,51ah ; set SI to address of first pixel in BMP File
 
         mov dx,0a000h
-        push dx
+        mov ds,dx ; set ds to MCGA screen sector
 
         startscanline:
                 mov bx,ax ; move pixel start to register that can be used as address
                 nextpixel:
-                        push cs
-                        pop ds
-                        mov dx,[si]
-                        pop ds
-                        push ds
-                        mov [bx],dx
+                        mov dx,[cs:si]
+                        mov [bx],dx ; move two pixels at a time from BMP to MCGA video mem.
                         add bx,2
-                        add si,2
-                        cmp bx,cx
-                jnz nextpixel
+                        add si,2 ; advance both BMP and MCGA counters
+                        cmp bx,cx 
+                jnz nextpixel ;check for last pixel in scanline - if not continue loop
         	sub cx,320
-		sub ax,320
-        jnc startscanline
-        pop ds ;clear stack
+		sub ax,320 ; adjust scanlines for MCGA up one row
+        jnc startscanline ; checked for carry error(A becomes less than 0) - if not continue with next scanline of BMP
         push cs
         pop ds ; restore ds to normal.
 
         mov ah,0
-        int 16h
+        int 16h ; press any key to continue
 
         shr si,9
-        add word [Vector],si
+        add word [Vector],si ; use adress of last pixel in BMP to determine next sector to load - divide by 512 and add to sector counter
 jmp NextImage ; this a while loop that terminates after it loads
 
 Exit:
