@@ -9,12 +9,12 @@ NextImage:
         mov ah,42h
         mov dl,80h
         mov si,offset packet
-        int 13h ; Read first 63 1/2 KB
+        int 13h ; Read next 63 1/2 KB
 
 	cmp word [200],'BM'
-	jnz ContinueRendering ; check for BMP signature - if not then exit
+	jz ContinueRendering ; check for BMP signature - if not then exit
 jmp Exit
-	Continue Rendering:
+	ContinueRendering:
 
 	mov ax,13h
 	int 10h ;Screen 13 - Clear Screen
@@ -37,7 +37,7 @@ jmp Exit
                 out dx,al
                 add bx,3
                 cmp bx,51ah
-        jnz PaletteLoop
+        jnz PaletteLoop ; continue loop until end of palette information
         mov ah,0
 
 
@@ -81,15 +81,15 @@ Exit:
 push cs
 pop es ; set ES to code sector
 mov ax,3
-int 10h
+int 10h ; cls screen 0 25x80
 mov ax,1300h
 mov bx,7
 mov cx,offset msgend - offset msg
 mov dx,101h
 mov bp,offset msg
-int 10h
+int 10h ; write out msg string
 HoldLoop:
-jmp  HoldLoop
+jmp  HoldLoop ; holding pattern - wait for reboot
 packet:
 dw 10h
 dw 127
