@@ -19,7 +19,7 @@ jmp Exit
 	mov ax,13h
 	int 10h ;Screen 13 - Clear Screen
 
-        mov dx,3c8
+        mov dx,3c8h
         mov al,0
         out dx,al ;use output port to prepare for color palette load.
         inc dx
